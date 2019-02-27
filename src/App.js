@@ -1,6 +1,11 @@
 import React, { Component } from 'react';
 import { ReactiveBase, DataSearch, ResultList } from '@appbaseio/reactivesearch';
+import ReactFlagsSelect from 'react-flags-select';
+import 'react-flags-select/css/react-flags-select.css';
 import './App.css';
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 function Keywords(props) {
   if (props.keywords.length === 0)
@@ -30,20 +35,8 @@ function Title(props) {
 function Text(props) {
   const document = props.document;
 
-  var html = null;
-  if ('text.en' in document)
-    html = document['text.en'];
-  else if ('text.nl' in document)
-    html = document['text.nl'];
-  else {
-    if ('nl' in document.text)
-      html = truncate(document.text['nl'], 500);
-    else
-      html = truncate(document.text['en'], 500);
-  }
-
   return (
-    <div dangerouslySetInnerHTML={{ __html: html}}></div>
+    <div dangerouslySetInnerHTML={{ __html: truncate(document.text, 500) }}></div>
   )
 }
 
@@ -73,56 +66,72 @@ function HumanizedMimeType(props) {
   );
 }
 
+function ToIndexName(baseIndex, language) {
+  let lang = language == null ? "nl" : language.toLowerCase(); 
+  return baseIndex + "-" + lang
+}
+
 class App extends Component {
+  default_country = "NL"
+  index_name = ToIndexName(process.env.REACT_APP_INDEX, this.defaultCountry);
+
   render() {
     return (
-      <div className="container">
-        <div className="title">
-          SURFpol
-        </div>
-        <ReactiveBase
-          app=""
-          credentials=""
-          url=""
-          headers={{
-            "X-SURFpol-Search-Session-ID": this.props.session_id
-          }}
-          analytics={true}
-          >
-          <DataSearch
-            componentId="SearchText"
-            dataField={["text.en", "text.nl", "title"]}
-            defaultSelected="injectie"
-            debounce={250}
-            highlight
-            autosuggest={false}
-            customHighlight={(props) => ({
-              highlight: {
-                  pre_tags: ['<mark>'],
-                  post_tags: ['</mark>'],
-                  fields: {
-                      'text.en': {},
-                      'text.nl': {},
-                      title: {}
-                  },
-                  number_of_fragments: 100,
-                  fragment_size: 500
-              },
-            })}
-          />
-          <ResultList
-            componentId="SearchResult"
-            dataField={"text"}
-            size={10}
-            onData={this.onData}
-            className="result-list-container"
-            pagination
-            react={{
-              and: 'SearchText',
+      <div className="base">
+        <ReactFlagsSelect 
+         countries={["US", "NL"]} 
+         customLabels={{"US": "EN", "NL": "NL"}} 
+         defaultCountry={this.defaultCountry}
+         onSelect={this.onSelectFlag}
+         placeholder="Select Language" />
+        <div className="container">
+          <div className="title">
+            SURFpol
+          </div>
+          <ReactiveBase
+            app={this.index_name}
+            credentials={process.env.REACT_APP_CREDENTIALS}
+            url={process.env.REACT_APP_URL}
+            headers={{
+              "X-SURFpol-Search-Session-ID": this.props.session_id
             }}
-          />
-        </ReactiveBase>
-      </div>
+            analytics={true}
+            >
+            <DataSearch
+              componentId="SearchText"
+              dataField={["text", "title^2"]}
+              placeholder=""
+              debounce={250}
+              queryFormat="and"
+              highlight
+              autosuggest={false}
+              customHighlight={(props) => ({
+                highlight: {
+                    pre_tags: ['<mark>'],
+                    post_tags: ['</mark>'],
+                    fields: {
+                        'text': {},
+                        title: {}
+                    },
+                    number_of_fragments: 100,
+                    fragment_size: 500
+                },
+              })}
+            />
+            <ResultList
+              componentId="SearchResult"
+              dataField={"text"}
+              size={10}
+              onData={this.onData}
+              className="result-list-container"
+              pagination
+              react={{
+                and: 'SearchText',
+              }}
+            />
+          </ReactiveBase>
+        </div>
+      </div> 
     );
   }
 
@@ -145,6 +154,15 @@ class App extends Component {
         </div>
       )
     });
+  }
+
+  onSelectFlag(countryCode) {
+    if (countryCode === "US")
+      this.lang = "en"
+    else
+      this.lang = "nl"
+    this.index_name = ToIndexName(process.env.REACT_APP_INDEX, this.lang);
+    this.forceUpdate()
   }
 }
 
