@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import { ReactiveBase, DataSearch, ResultList } from '@appbaseio/reactivesearch';
-import ReactFlagsSelect from 'react-flags-select';
-import 'react-flags-select/css/react-flags-select.css';
 import './App.css';
 import dotenv from 'dotenv'
 
@@ -77,14 +75,7 @@ class App extends Component {
 
   render() {
     return (
-      <div className="base">
-        <ReactFlagsSelect 
-         countries={["US", "NL"]} 
-         customLabels={{"US": "EN", "NL": "NL"}} 
-         defaultCountry={this.defaultCountry}
-         onSelect={this.onSelectFlag}
-         placeholder="Select Language" />
-        <div className="container">
+       <div className="container">
           <div className="title">
             SURFpol
           </div>
@@ -131,7 +122,6 @@ class App extends Component {
             />
           </ReactiveBase>
         </div>
-      </div> 
     );
   }
 
@@ -154,15 +144,6 @@ class App extends Component {
         </div>
       )
     });
-  }
-
-  onSelectFlag(countryCode) {
-    if (countryCode === "US")
-      this.lang = "en"
-    else
-      this.lang = "nl"
-    this.index_name = ToIndexName(process.env.REACT_APP_INDEX, this.lang);
-    this.forceUpdate()
   }
 }
 
