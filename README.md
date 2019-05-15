@@ -12,5 +12,6 @@
 
 ## Release
     
-      npm run build
-      scp ubuntu@surfpol-search.sda.surf-hosted.nl build/* ...
+    npm run build
+    rsync -av -e "ssh" --rsync-path="sudo rsync" build/ ubuntu@surfpol-search.sda.surf-hosted.nl:/var/www/html --delete
+
